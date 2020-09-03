@@ -1,0 +1,109 @@
+---
+title: "tidytuesday_9-3-2020"
+author: "Amanda R Hart"
+date: "9/3/2020"
+output: html_document
+---
+
+This script uses a tidy tuesday dataset from September 1st (I did more of a tidy thursday this week) to explore ggplot2 themes.
+```{r}
+library(ggplot2)
+
+key_crop_yields <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-01/key_crop_yields.csv')
+fertilizer <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-01/cereal_crop_yield_vs_fertilizer_application.csv')
+tractors <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-01/cereal_yields_vs_tractor_inputs_in_agriculture.csv')
+land_use <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-01/land_use_vs_yield_change_in_cereal_production.csv')
+arable_land <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-01/arable_land_pin.csv')
+
+```
+Themes to explore in the future:
+
+- xkcd
+- tvthemes
+- ggrough package
+
+The economist has their own theme:
+```{r pressure, echo=FALSE}
+# library(xkcd)
+# library(tvthemes)
+library(ggthemes)
+
+key_crop_yields %>%
+  rename(CocoaBeans = `Cocoa beans (tonnes per hectare)`   ) %>%
+  filter(Entity == "Africa") %>%
+ggplot() +
+  geom_line(aes(x=Year, y=CocoaBeans)) + 
+  ggtitle("African Cocoa Bean Production (tonnes per hectare)") +
+  # theme_xkcd()
+  theme_economist()
+```
+
+BBC uses a style
+```{r pressure, echo=FALSE}
+library(bbplot)
+
+key_crop_yields %>%
+  rename(CocoaBeans = `Cocoa beans (tonnes per hectare)`   ) %>%
+  filter(Entity == "Africa") %>%
+ggplot() +
+  geom_line(aes(x=Year, y=CocoaBeans)) + 
+  ggtitle("African Cocoa Bean Production (tonnes per hectare)") +
+  bbc_style()
+```
+
+The `ggthemr` package lets you set one of the pre-defined themes for all the subsequent ggplots
+```{r pressure, echo=FALSE}
+library(ggthemr)
+
+ggthemr("earth") # ggthemr_reset() # to reset
+# https://www.shanelynn.ie/themes-and-colours-for-r-ggplots-with-ggthemr/
+
+key_crop_yields %>%
+  rename(CocoaBeans = `Cocoa beans (tonnes per hectare)`   ) %>%
+  filter(Entity == "Africa") %>%
+ggplot() +
+  geom_line(aes(x=Year, y=CocoaBeans)) + 
+  ggtitle("African Cocoa Bean Production (tonnes per hectare)") 
+  
+```
+
+```{r pressure, echo=FALSE}
+library(ggthemr)
+
+ggthemr("sea") # ggthemr_reset() # to reset
+# https://www.shanelynn.ie/themes-and-colours-for-r-ggplots-with-ggthemr/
+
+key_crop_yields %>%
+  rename(CocoaBeans = `Cocoa beans (tonnes per hectare)`   ) %>%
+  filter(Entity == "Africa") %>%
+ggplot() +
+  geom_line(aes(x=Year, y=CocoaBeans)) + 
+  ggtitle("African Cocoa Bean Production (tonnes per hectare)") 
+  
+```
+
+Maybe try this too
+```{r}
+library(ggrough) # problem with system fonts
+# https://rdrr.io/github/xvrdm/ggrough/f/vignettes/Customize%20chart.Rmd
+
+key_crop_yields %>%
+  rename(CocoaBeans = `Cocoa beans (tonnes per hectare)`   ) %>%
+  filter(Entity == "Africa") %>%
+ggplot() +
+  geom_line(aes(x=Year, y=CocoaBeans)) + 
+  ggtitle("African Cocoa Bean Production (tonnes per hectare)") 
+  
+
+# ggRough part
+options <- list(
+  Background=list(roughness=12),
+  GeomCol=list(fill_style="solid", bowing=0, roughness=6))
+get_rough_chart(p, options, family = "Homemade Apple", font_size_booster = 1.45)
+
+```
+
+
+
+
+
