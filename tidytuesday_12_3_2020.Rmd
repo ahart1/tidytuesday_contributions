@@ -1,0 +1,67 @@
+---
+title: "tidytuesday_12-3_2020"
+output: html_document
+---
+
+# Tidy Tuesday South Coast MA UseR Group December Meeting
+```{r setup, include=FALSE}
+library(tidyverse)
+```
+
+
+```{r}
+library("tidytuesdayR")
+tuesdata <- tidytuesdayR::tt_load('2020-12-01')
+data <- tuesdata$shelters
+```
+# Explore data
+```{r}
+summarize(data)
+summary(data)
+glimpse(data)
+colnames(data)
+```
+
+# Switch gears entirely to look at colors
+Where to find color gradients/scales:
+
+- Colorbrewer 
+- viridis package & related color schemes
+
+The scales package lets you print colors to screen using names:
+```{r}
+library(scales)
+show_col(c("#9C89B8", "#F0A6CA", "blue"))
+```
+
+# Try making a map of shelters with a google map background
+```{r}
+library(lubridate)
+library(data.table)
+library(ggrepel)
+library(tidyverse)
+```
+
+First tried to set up map with goolge maps background using ggmap package. I found this article (https://www.r-graph-gallery.com/324-map-background-with-the-ggmap-library.html) and the default lat/long dimensions a good place to start (adding google map background requires link to API that I didn't have time to do).
+
+The maptype gives a couple of themes to work with if you don't use a google map background.
+```{r}
+test <- get_stamenmap(maptype = "watercolor")
+ggmap(test)
+
+```
+
+Another map type!
+```{r}
+test <- get_stamenmap(maptype = "toner")
+ggmap(test)
+
+```
+
+Finally figured out setting the lat/long dimensions correctly to focus on Toronto area.
+```{r}
+test <- get_stamenmap(bbox = c(bottom = 41, top = 45, right = -77, left = -81), maptype = "watercolor")
+ggmap(test)
+
+```
+
