@@ -1,0 +1,84 @@
+---
+title: "Wingspan_TidyTuesday"
+output: html_document
+---
+
+I explored the wingspan game dataset from the wingspan package
+```{r}
+library(tidyverse)
+library("wingspan")
+library(gghighlight)
+```
+
+
+```{r}
+summary(wingspan::birds)
+
+```
+
+# Goal: plot wingspan across 3 habitats
+```{r}
+# Add new habitat column
+bird <- wingspan::birds %>% mutate(Habitat = case_when(
+  forest==TRUE ~ "Forest",
+  grassland==TRUE ~ "Grassland",
+  wetland==TRUE ~ "Wetland"
+))
+
+#bird %>% filter(Habitat == "Forest") %>% max(wingspan, na.rm=TRUE)
+bird %>% group_by(Habitat) %>% #max(wingspan, na.rm=TRUE)
+  ggplot() +
+  geom_point(aes(x=Habitat, y=wingspan)) +
+  gghighlight(common_name == "California Condor"| common_name =="Griffon Vulture"| common_name=="American White Pelican", label_key = common_name) # Won't work if there are NAs
+
+# Griffon Vulture
+# American White Pelican
+```
+
+
+# Goal: add bird images behind plotted points
+Successful for whole background
+```{r}
+# Add image behind whole plot
+condor <- readPNG("/Users/ahart2/Downloads/Condor.png")
+bird %>% group_by(Habitat) %>% #max(wingspan, na.rm=TRUE)
+  ggplot() +
+  annotation_custom(rasterGrob(condor, width=1, height=1),xmin=-Inf,xmax=Inf,-Inf,Inf) + # Whole background
+  geom_point(data=bird, aes(x=Habitat, y=wingspan)) +
+  #gghighlight(wingspan<18 & wingspan>15, label_key = common_name)
+  gghighlight(common_name == "California Condor"| common_name =="Griffon Vulture"| common_name=="American White Pelican"| 
+              common_name=="Black-Chinned Hummingbird"| common_name=="Horsfield's Bushlark"| common_name=="Cetti's Warbler", label_key = common_name)
+```
+
+Unsuccessful when plotting smaller image as particular points
+```{r}
+# Points for bird images
+pictureBird <- data.frame(wingspan = c(225.0,25.0,250.0,15.0,235.0,20.0), Habitat=c("Forest", "Forest", "Grassland", "Grassland", "Wetland", "Wetland"), Image=c("Condor.png"))  
+
+# Image=c("https://www.r-project.org/logo/Rlogo.png","https://jeroenooms.github.io/images/frink.png","https://www.r-project.org/logo/Rlogo.png","https://jeroenooms.github.io/images/frink.png","https://www.r-project.org/logo/Rlogo.png","https://jeroenooms.github.io/images/frink.png")) # Doesn't work here but works in test https://www.rdocumentation.org/packages/ggimage/versions/0.2.8/topics/geom_image
+
+                        
+                          
+bird %>% 
+  ggplot() +
+  geom_point(aes(x=Habitat, y=wingspan)) +
+  gghighlight(common_name == "California Condor"| common_name =="Griffon Vulture"| common_name=="American White Pelican", label_key = common_name) # Won't work if there are NAs
+
+# Try adding points for bird images
+ggplot() + 
+  geom_point(data=bird, aes(x=Habitat, y=wingspan)) + 
+  geom_point(data=pictureBird, aes(x=Habitat, y=wingspan, color="red"))
+
+# Try adding bird at bird image point
+  # Doesn't work because can't find .png, can's substitute with web png because subscript too long?
+setwd("/Users/ahart2/Downloads")
+ggplot() + 
+  geom_point(data=bird, aes(x=Habitat, y=wingspan)) + 
+  geom_image(data=pictureBird, aes(x=Habitat, y=wingspan, image=Image, size=0.2))
+# Same error as above
+ggplot(data=bird, aes(x=Habitat, y=wingspan)) + 
+  geom_point() + 
+  geom_image(data=pictureBird, aes(image=Image, size=0.2))
+```
+
+
