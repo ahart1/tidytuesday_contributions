@@ -1,0 +1,252 @@
+---
+title: "Waffle_Tutorial"
+output: html_document
+---
+
+This document walks through a simple example to make a waffle plot using starwars data from the `dplyr` package
+
+# Setup work space
+Load the `waffle` package
+```{r}
+# devtools::install_git("https://git.rud.is/hrbrmstr/waffle.git")
+library(waffle)
+```
+Load other packages
+```{r}
+library(tidyverse)
+```
+Load the starwars data
+```{r}
+starwars <- dplyr::starwars
+starwars
+```
+
+# Make an ugly waffle plot with `ggplot()`
+```{r}
+# The data
+starwars %>% 
+  filter("Attack of the Clones" %in% films) %>%
+  count(sex)
+# The plot
+starwars %>% 
+  filter("Attack of the Clones" %in% films) %>%
+  count(sex) %>%
+  ggplot(aes(fill = sex, values=n)) +
+    geom_waffle(nrows = 10)
+```
+# Improve formatting
+```{r}
+# The data arranged by count
+starwars %>% 
+  filter("Attack of the Clones" %in% films) %>%
+  count(sex) %>% arrange(., desc(n))
+
+# The plot
+starwars %>% 
+  filter("Attack of the Clones" %in% films) %>%
+  count(sex) %>% arrange(., desc(n)) %>%
+  ggplot(aes(fill = sex, values=n)) +
+    geom_waffle(color = "white", nrows = 10) +
+    theme_minimal() +
+    theme_enhance_waffle()
+```
+
+Need to remove "NA"s
+```{r}
+newWaffle <- starwars %>% 
+  filter("Attack of the Clones" %in% films) %>%
+  count(sex) %>% 
+  arrange(., desc(n)) %>% 
+  drop_na() %>%
+  ggplot(aes(fill = sex, values=n)) +
+    geom_waffle(color = "white", nrows = 10) +
+    theme_minimal() +
+    theme_enhance_waffle()
+newWaffle
+```
+
+# Try using the `waffle()` function
+```{r}
+data <- starwars %>% 
+  filter("Attack of the Clones" %in% films) %>%
+  count(sex) %>%
+  arrange(., desc(n)) %>% 
+  drop_na()
+
+# use ggplot_build() to find the default fill colors used in newWaffle
+# ggplot_build(newWaffle)$data
+
+waffle(data, rows=10, size = 1, colors = c("#00BFC4", "#F8766D", "#C77CFF", "#7CAE00"))
+```
+
+# Turn ggplot into a pictogram
+First time users may encounter the following error:
+
+"Error: Font [Font Awesome 5 Free Solid] not found. Please install it and use extrafont to make it available to R"
+
+To fix this error:
+
+* Install Font Awesome 5 Free Solid, "easy" steps here: https://www.listendata.com/2019/06/create-infographics-with-r.html
+* Install `emojifont` package instead (https://cran.r-project.org/web/packages/emojifont/vignettes/emojifont.html), if this doesn't work:
+    + May not have correct name for emoji
+    + May not work for Macs/version of R
+
+
+To install Font Awesome:
+```{r}
+# 1
+library(extrafont)
+
+# 2 Install files
+
+# 3 Import font from files
+extrafont::font_import(path = "/Users/ahart2/Downloads", pattern = "fa-", prompt = FALSE)
+
+# 4 load fonts
+loadfonts(device="pdf")
+
+# 5 Check
+extrafont::fonttable() %>% 
+  dplyr::as_tibble() %>% 
+  dplyr::filter(grepl("Awesom", FamilyName)) %>% 
+  select(FamilyName, FontName, fontfile)
+```
+
+Generate the pictogram using `geom_pictogram()`
+```{r}
+starwars %>% 
+  filter("Attack of the Clones" %in% films) %>%
+  count(sex) %>% 
+  arrange(., desc(n)) %>% 
+  drop_na() %>%
+  ggplot() +
+    geom_pictogram(aes(label = sex, values=n, color = sex), n_rows = 10, make_proportional = TRUE, size=5.) +
+    scale_color_manual( # Without this function call, 2 legends created
+      name = NULL,
+      values = c("#00BFC4", "#F8766D", "#C77CFF", "#7CAE00"),
+      labels = c("male", "female", "none", "hermaphroditic")
+    ) +
+    scale_label_pictogram(
+      name = NULL, 
+      values = c("user", "user-tie", "user-ninja", "user-md"), # This is the pictogram to use
+      labels = c("male", "female", "none", "hermaphroditic")
+    ) +
+    theme_minimal() +
+    theme_enhance_waffle()
+```
+
+The colors in the legend match the data, but the colors/icons in the plot do not! Be careful with labels!
+```{r}
+starwars %>% 
+  filter("Attack of the Clones" %in% films) %>%
+  count(sex) %>% 
+  arrange(., desc(n)) %>% 
+  drop_na() %>%
+  ggplot() +
+    geom_pictogram(aes(values = n, label = sex, colour = sex),
+                   n_rows = 10, make_proportional = TRUE, size=5.) +
+    scale_label_pictogram(
+      name = NULL, 
+      values = c("user", "user-tie", "user-ninja", "user-md"), # These are the pictograms to use
+    ) +
+    scale_color_manual( # Without this function call, 2 legends created
+      name = NULL,
+      values = c("#F8766D", "#7CAE00", "#00BFC4", "#C77CFF") # Notice I removed labels
+    ) + 
+    theme_minimal() +
+    theme_enhance_waffle()
+```
+
+Use a uniform icon in the pictogram
+```{r}
+starwars %>% 
+  filter("Attack of the Clones" %in% films) %>%
+  count(sex) %>% 
+  arrange(., desc(n)) %>% 
+  drop_na() %>%
+  ggplot() +
+    geom_pictogram(aes(values = n, label = sex, colour = sex),
+                   n_rows = 10, make_proportional = TRUE, size=5.) +
+    scale_label_pictogram(
+      name = NULL, 
+      values = c("male", "male", "male", "male"), # This is the pictogram to use
+    ) +
+    scale_color_manual( # Without this function call, 2 legends created
+      name = NULL,
+      values = c("#F8766D", "#7CAE00", "#00BFC4", "#C77CFF")
+    ) + 
+    theme_minimal() +
+    theme_enhance_waffle()
+```
+
+May also use `waffle()` to create a pictogram
+```{r}
+data <- starwars %>% 
+  filter("Attack of the Clones" %in% films) %>%
+  count(sex) %>%
+  arrange(., desc(n)) %>% 
+  drop_na()
+
+waffle(data, rows=10, colors = c("#00BFC4", "#F8766D", "#C77CFF", "#7CAE00"), glyph_size = 4, use_glyph = "male") # glyph_size changes the image size!
+```
+
+# Facet by birth year and show sex ratio
+```{r}
+starwars %>%
+  mutate(year_groups = cut(birth_year, breaks = c(seq(0,900, by=50)))) %>% # Group birth years
+  count(year_groups,sex) %>%
+  arrange(., desc(n)) %>% 
+  drop_na() %>%
+  ggplot(aes(fill=sex, values=n))+
+    geom_waffle(color = "white", n_rows=5, flip=TRUE) + # Flip and change # rows
+    facet_wrap(~year_groups, nrow = 1, strip.position = "bottom") +
+    scale_y_continuous(labels = function(x) x*5, expand=c(0,0)) + # number is same as n_rows
+    scale_x_discrete() + # Don't show x-axis scale
+    theme_minimal() +
+    theme(panel.grid = element_blank(), axis.ticks.y = element_line()) +
+  labs(
+    x = "Birth Year",
+    y = "Count"
+  )
+
+```
+
+Not all characters have ages so these counts will look different than previous plots.
+
+# Lessons learned
+1) Be careful with pictogram labels, often best to start with a waffle plot so you know what it should look like.
+
+2) Waffle plots with too many variables can be hard to read
+```{r}
+starwars %>%
+  count(eye_color) %>% # Count number in each color category
+  ggplot(aes(fill = eye_color, values = n)) +
+    geom_waffle()
+```
+
+3) Even if you clean up their formatting they may still be ugly
+```{r}
+# Use eye-colors in plot appearance
+starwars %>%
+  count(eye_color) %>% # Count number in each color category
+  ggplot(aes(fill = eye_color, values = n)) +  # n = counts
+    geom_waffle(n_rows=10, size=0.33, color="white") + 
+    scale_fill_manual(values = c("black", "dodgerblue", "cadetblue3", "chocolate3", "chocolate4", "gold", "greenyellow", "brown", "darkorange", "pink", "red", "violetred", "wheat", "ghostwhite", "yellow2")) +
+    theme_minimal() +
+    theme_enhance_waffle()
+```
+
+4) Faceting for variables with many possible values can result in unreadable charts
+```{r}
+starwars %>% 
+  count(homeworld, species) %>%
+  ggplot(aes(fill = species, values=n)) +
+  geom_waffle(color = "white", nrows = 10) +
+  facet_wrap(~homeworld, nrow = 1)
+```
+
+# Helpful resources
+* README file for waffle package: https://github.com/hrbrmstr/waffle
+* Extra waffle and pictogram examples: https://nsaunders.wordpress.com/2017/09/08/infographic-style-charts-using-the-r-waffle-package/
+* Steps to install Font Awesome for pictograms: https://www.listendata.com/2019/06/create-infographics-with-r.html
+* Find icons for pictograms: https://fontawesome.com/icons?d=gallery&p=2
