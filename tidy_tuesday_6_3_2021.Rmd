@@ -1,0 +1,107 @@
+---
+title: "Pretty_Maps"
+output: html_document
+---
+
+# Making pretty maps with R and ggplot
+This document uses a Tidy Tuesday dataset to set up an initial map and then steps through different packages to add features, improve layout, and customize the map.
+
+```{r}
+library(tidyverse)
+library(tidytuesdayR)
+# devtools::install_github("UrbanInstitute/urbnmapr")
+library(urbnmapr) # County and state polygons
+```
+
+Read in the data: https://github.com/rfordatascience/tidytuesday/tree/master/data/2021/2021-05-11
+```{r}
+tuesdata <- tidytuesdayR::tt_load('2021-05-11')
+broadband <- tuesdata$broadband
+```
+Take an initial look
+```{r}
+summary(broadband)
+head(broadband)
+```
+
+Load urbnmapr package data, see package README for example using shape file plots (https://github.com/UrbanInstitute/urbnmapr)
+```{r}
+states <- urbnmapr::states
+county <- left_join(countydata, counties, by = "county_fips")
+
+# Plot states
+ggplot() +
+  geom_polygon(data = states, aes(x=long, y=lat, group=group), fill = "grey", color="white")
+
+# Plot counties and states
+ggplot() +
+  geom_polygon(data = county, aes(x=long, y=lat, group = group), fill = "grey", color="white",size = 0.1) + # plot counties
+  geom_polygon(data = states, aes(x=long, y=lat, group=group), fill = NA, color="white", size = 0.3) # Add thicker state divisions
+```
+
+Merge broadband and county data
+```{r}
+# Rename broadband columns so county name column named consistently in both dataframes
+colnames(broadband) <- c("ST", "county_fips", "NAMELSAD", "Broadband_Avail_Per_FCC", "Broadband_Usage")
+
+county <- county %>% mutate(county_fips = as.numeric(county_fips)) # Make FIPs ID numeric
+
+# Merge county polygon and broadband data
+broadband <- full_join(broadband, county, by = "county_fips") 
+head(broadband)
+```
+
+Plot broadband availability (as of 2017) data similar to Tidy Tuesday README
+```{r}
+broadband <- broadband %>% mutate(PercentColor = ifelse(Broadband_Avail_Per_FCC < 0.15, "<15%", ">=15%")) 
+  ggplot() +
+  geom_polygon(data = broadband, aes(x=long, y=lat, group = group, fill = factor(PercentColor)), color="white",size = 0.1) + # plot counties
+  geom_polygon(data = states, aes(x=long, y=lat, group=group), fill = NA, color="white", size = 0.3) + # Add thicker state divisions
+    scale_color_manual(aesthetics = "fill", values = c("navy", "grey"), name = "% of people with access \n to 25Mbps/3 Mbps ", na.value = "grey36") +
+    coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+    theme(panel.background = element_rect(fill="white"), axis.title.x = element_blank(), axis.title.y = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank())
+```
+In most locations more than 15% of people have access to 25Mbps speed internet as of 2017.
+
+
+Plot broadband use data (as of 2019) as in Tidy Tuesday README
+```{r}
+broadband <- broadband %>% mutate(PercentColor = ifelse(Broadband_Usage < 0.15, "<15%", ">=15%")) 
+  ggplot() +
+  geom_polygon(data = broadband, aes(x=long, y=lat, group = group, fill = factor(PercentColor)), color="white",size = 0.1) + # plot counties
+  geom_polygon(data = states, aes(x=long, y=lat, group=group), fill = NA, color="white", size = 0.3) + # Add thicker state divisions
+    scale_color_manual(aesthetics = "fill", values = c("navy", "grey"), name = "% of people using the internet \n at 25Mbps or above", na.value = "grey36") +
+    coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+    theme(panel.background = element_rect(fill="white"), axis.title.x = element_blank(), axis.title.y = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank())
+```
+However, it appears that as of 2019 more people with access do not use this speed of internet.
+
+# Try changing the formatting
+Here is a list of packages to consider using for inspiration: https://insileco.github.io/wiki/rgraphpkgs/#Listofpackages
+
+Try using leafletR to create interactive map (show actual % useage when hovering over county)
+
+
+Explore micromap
+
+
+Explore interactive graphics packages
+
+Explore heatmaply/plotly
+
+To make it pretty: ggsn, ggsci, ggThemeAssist
+
+Look at tikzDevice
+
+
+
+
+
+
+
+
+
+
+
+
+
