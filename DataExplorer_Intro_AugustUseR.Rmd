@@ -1,0 +1,217 @@
+---
+title: "tidy_thursday_8_5_2021"
+output: html_document
+---
+
+# August meeting of the South Coast MA UseR Group: `DataExplorer` Package
+This document tests the features of the `DataExplorer` R package by 1) working through examples in the package documentation, and 2) using these features to explore a Tidy-Tuesday dataset. 
+
+Start by installing and loading the package:
+```{r}
+# install.packages("DataExplorer")
+library(DataExplorer)
+```
+
+Load other useful packages
+```{r}
+library(nycflights13) # Data
+library(tidyverse) 
+```
+
+## Work through the package documentation
+This document walks through `DataExplorer` package features, borrowing from the following:
+
+- The package introduction: http://boxuancui.github.io/DataExplorer/
+- The package vignettes: https://boxuancui.github.io/DataExplorer/articles/dataexplorer-intro.html
+- Whenever possible the following two datasets were used in the examples (rather than switching between many datasets as in the documentation):
+ - `airquality` from the `DataExplorer` package
+ - `flights` from the `nycflights13` package
+
+
+Create a report that applies all the major features of this package & returns an html report
+```{r, include=FALSE}
+create_report(airquality)
+```
+
+### The report breakdown
+#### Describe data
+View a description of the data, including structure, size, missing information:
+```{r}
+introduce(airquality)
+```
+
+Plot this introductory data:
+```{r}
+plot_intro(airquality)
+```
+
+Plot the distribution of missing values by variable
+```{r}
+plot_missing(airquality)
+```
+
+Examine the data structure
+```{r}
+plot_str(airquality)
+```
+
+This will also break down lists of data nicely
+```{r}
+listdata <- list(airquality, flights)
+plot_str(test_data)
+```
+
+Optional: the orientation of this structure can be switched to a circle
+```{r}
+plot_str(test_data, type="r")
+```
+
+#### Continuous variables
+Plot histogram of continuous variables 
+```{r}
+plot_histogram(airquality)
+```
+
+Optional: add plot of density distribution for continous variables
+```{r}
+plot_density(airquality)
+```
+
+QQ plots are automatically considered for continuous variables:
+```{r}
+plot_qq(airquality)
+```
+
+Optional: also break down qqplot by variable
+```{r}
+plot_qq(airquality, by = "Month")
+```
+
+Optional: Plot boxplot of continuous variables relative to another continuous or discrete variable
+```{r}
+# Continuous variable
+plot_boxplot(airquality, by = "Ozone")
+# Discrete variable
+plot_boxplot(flights, by = "origin")
+```
+
+Optional: Plot scatterplot of continuous variables relative to another continuous variable
+```{r}
+plot_scatterplot(airquality, by = "Ozone")
+```
+
+
+#### Discrete variables
+Plot frequencies for discrete variables in the dataset (none in `airquality` so use `flights` dataset instead)
+```{r}
+plot_bar(flights)
+```
+
+Optional: plot distribution of discrete variables relative to a continuous variable (e.g. departure delay)
+```{r}
+plot_bar(flights, with = "dep_delay")
+```
+
+Optional: plot frequency distribution of discrete variables colored relative to a discrete variable (e.g. departure delay)
+```{r}
+plot_bar(flights, by = "origin")
+```
+
+
+#### All variables
+Plot correlation heatmap
+```{r}
+plot_correlation(airquality)
+```
+
+Missing values will result in no correlation calculation, to resolve remove rows with NAs:
+```{r}
+airquality[complete.cases(airquality),] %>% plot_correlation()
+```
+
+The `type` argument can be used to show only continuous variables (type = "c") or discrete variables (type = "d")
+```{r}
+flights[complete.cases(flights),] %>% plot_correlation(type = "c") # Only 1 year in data
+flights[complete.cases(flights),] %>% plot_correlation(type = "d")
+```
+
+
+Run and visulaize principal component analysis (must remove rows containing NAs in order to run)
+```{r}
+plot_prcomp(na.omit(airquality))
+```
+
+
+### Feature engineering
+Create new features using existing data!
+
+Replace missing values in flights dataset, 0s for continuous variables, "unknown" for discrete variables
+```{r}
+noMissing <- set_missing(flights, list(0, "unknown")) 
+noMissing
+plot_missing(noMissing) # No longer has missing values
+```
+
+Group sparse data into a single category based on threshold (bottom 20% of counts), update = TRUE updates original data
+```{r}
+temp <- group_category(flights, feature = "carrier", threshold = 0.2, update = TRUE)
+plot_bar(temp$carrier)
+```
+May also group by another variable (e.g. carrier grouped by lowest 20% distance traveled)
+```{r}
+temp <- group_category(flights, feature = "carrier", threshold = 0.2, update = TRUE, measure = "distance")
+plot_bar(temp$carrier)
+```
+
+Transform discrete variables into a binary format with `dummify`
+
+Remove data columns (e.g. one with many missing values or not of interest) using `drop_columns`, performs the opposite operation of `dplyr::select` 
+E.g. to remove the Ozone column run:
+```{r}
+drop_columns(airquality, "Ozone")
+```
+
+`update_columns` can be used to perform a calculation or transformation on a single variable, similar to `dplyr::mutate` but automatically keeps the same column name for the manipulated variable
+E.g. turn Month into a categorical variable:
+```{r}
+update_columns(airquality, "Month", as.factor)
+```
+
+### Data reporting
+`create_report()` automatically structures report with many of the plots discussed above based on the data structure (i.e. will not include plots of discrete variables if none present in dataset)
+
+Optional: adding a `y` argument will result in bivariate plots to be added to report (e.g. boxplots and scatterplots)
+```{r, include=FALSE}
+create_report(airquality, y = "Ozone")
+```
+
+Optional: `configure_report()` lets you add/remove plots to customize the report (e.g. scatterplots)
+```{r, include=FALSE}
+config <- configure_report(add_plot_density = TRUE,
+                           global_ggtheme = quote(theme_dark()))
+
+create_report(airquality, config = config)
+```
+
+
+## Will it work for your data? A Tidy-Tuesday test
+Try generating a DataExplorer report for a messier Tidy-Tuesday dataset (find the datset here: https://github.com/rfordatascience/tidytuesday)
+
+Load the dataset
+```{r, include=FALSE}
+tuesdata <- tidytuesdayR::tt_load('2021-08-03')
+```
+
+Must have rows & columns
+```{r, include = FALSE}
+config <- configure_report(add_plot_bar = TRUE, 
+                           plot_bar_args = list(by = "gender"))
+
+create_report(tuesdata$athletes, config = config, y = "year")
+# Look at country, gender, type over years in scatterplots
+```
+
+Plot default barplot
+```{r}
+plot_bar(tuesdata$athletes)
+```
