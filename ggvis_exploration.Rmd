@@ -1,0 +1,98 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# February 2022 UseR meeting ggvis package
+
+Load packages
+```{r}
+library(dplyr)
+library(ggvis)
+```
+## Tutorial walk-through
+```{r}
+mtcars %>%
+  ggvis(x=~mpg, y=~disp) %>%
+  mutate(disp=disp/61.0237) %>% # convert to litres
+  layer_points()
+```
+
+Add interactivity
+```{r}
+mtcars %>% 
+  ggvis(~wt, ~mpg, 
+    size := input_slider(10, 100),
+    opacity := input_slider(0, 1)
+  ) %>% 
+  layer_points()
+```
+
+Really cool feature = can include interactive plots in Rmd documents knit to htmls
+
+Add tooltips to highlight values (here weight)
+```{r}
+mtcars %>% ggvis(~wt, ~mpg) %>% 
+  layer_points() %>% 
+  add_tooltip(function(df) df$wt)
+```
+
+
+## My explorations
+Can you add interactive scale bars that switch between categorical variables? - maybe, still exploring
+https://ggvis.rstudio.com/interactivity.html
+```{r}
+library("palmerpenguins")
+
+penguins %>%
+  ggvis(x = ~bill_length_mm, y =~bill_depth_mm) %>%
+  layer_points()
+```
+
+Useful example for using prop: https://stackoverflow.com/questions/39666748/ggvis-using-a-variable-to-assign-x-property-using-props
+
+Set up shape shift based on selected choice, doesn't correspond to data in any way
+```{r}
+# p1 <- prop("x", input_select(c("bill_length_mm", "flipper_length_mm", "body_mass_g")))
+# p2 <- prop("shape", input_select(choices = c("cross", "diamond", "cross"), map = c("sex", "species", "island")))
+
+p3 <- prop("shape", input_select(choices = c("sex" = "cross", "species" = "diamond"))) # read help document for input_select
+
+#p4 <- prop("shape", input_select(choices = c("sex" , "species"))) # read help document for input_select
+
+head(penguins, n=20) %>%
+  ggvis(x=~bill_length_mm, y =~bill_depth_mm, shape := p3) %>%
+  layer_points() 
+  
+```
+
+Plot with categorical factor for shape
+```{r}
+head(penguins, n=20) %>%
+  ggvis(x=~bill_length_mm, y =~bill_depth_mm, shape =~factor(sex)) %>%
+  layer_points() 
+  
+```
+
+Tried switching so plots shape based on categorical factor selected
+```{r}
+# p1 <- prop("x", input_select(c("bill_length_mm", "flipper_length_mm", "body_mass_g")))
+# p2 <- prop("shape", input_select(choices = c("cross", "diamond", "cross"), map = c("sex", "species", "island")))
+
+# p3 <- prop("shape", input_select(choices = c("sex" = "cross", "species" = "diamond"))) # read help document for input_select
+
+p4 <- prop("shape", input_select(choices = c("sex" = ~factor(sex) , "species" = ~factor(species)), map = identity)) # read help document for input_select
+
+# head(penguins, n=20) %>%
+#  ggvis(x=~bill_length_mm, y =~bill_depth_mm, shape = ~factor(sex)) %>%
+#  layer_points() 
+
+head(penguins, n=20) %>%
+  ggvis(x=~bill_length_mm, y =~bill_depth_mm, shape := p4) %>%
+  layer_points() 
+  
+```
+
+
+
+
