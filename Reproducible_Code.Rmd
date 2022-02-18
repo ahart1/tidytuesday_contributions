@@ -167,11 +167,15 @@ library(gistr)
 ## Try it yourself
 Process to repeat:
 ```{r}
+library(palmerpenguins)
 
+penguins %>% 
+  dplyr::filter(year == 2007) %>% 
+  dplyr::summarise(mean_body_mass = mean(body_mass_g,na.rm=TRUE))
 
 ```
 
-Turn this code into a function:
+Turn this code into a function that lets you change the year by year:
 ```{r}
 
 ```
